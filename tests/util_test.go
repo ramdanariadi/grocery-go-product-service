@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/ramdanariadi/grocery-be-golang/helpers"
-	"github.com/ramdanariadi/grocery-be-golang/models"
-	"github.com/ramdanariadi/grocery-be-golang/repositories/product"
-	"github.com/ramdanariadi/grocery-be-golang/utils"
+	helpers2 "github.com/ramdanariadi/grocery-be-golang/main/helpers"
+	"github.com/ramdanariadi/grocery-be-golang/main/models"
+	"github.com/ramdanariadi/grocery-be-golang/main/repositories/product"
+	utils2 "github.com/ramdanariadi/grocery-be-golang/main/utils"
 	"os"
 	"path/filepath"
 	"sync"
@@ -18,24 +18,24 @@ import (
 
 func Test_read_csv(t *testing.T) {
 	abs, err := filepath.Abs("../others/product.csv")
-	helpers.PanicIfError(err)
-	utils.ProductsFromCSV(abs)
+	helpers2.PanicIfError(err)
+	utils2.ProductsFromCSV(abs)
 }
 
 func Test_os_pwd(t *testing.T) {
 	getwd, err := os.Getwd()
-	helpers.PanicIfError(err)
+	helpers2.PanicIfError(err)
 
 	fmt.Println(getwd)
 
 	abs, err := filepath.Abs("../utils/product.csv")
-	helpers.PanicIfError(err)
+	helpers2.PanicIfError(err)
 
 	fmt.Println(abs)
 }
 
 func Test_insert_product_from_csv(t *testing.T) {
-	db := utils.GetDBConnection()
+	db := utils2.GetDBConnection()
 
 	productRepo := product.ProductRepositoryImpl{
 		DB: db,
@@ -46,7 +46,7 @@ func Test_insert_product_from_csv(t *testing.T) {
 		fmt.Println("filepath abs error")
 	}
 
-	products := utils.ProductsFromCSV(abs)
+	products := utils2.ProductsFromCSV(abs)
 
 	group := sync.WaitGroup{}
 	begin, err := productRepo.DB.Begin()
@@ -56,7 +56,7 @@ func Test_insert_product_from_csv(t *testing.T) {
 	}
 
 	defer func(db *sql.DB) {
-		helpers.CommitOrRollback(begin)
+		helpers2.CommitOrRollback(begin)
 		err := db.Close()
 		if err != nil {
 			fmt.Println("close db error")
@@ -80,7 +80,7 @@ func Test_insert_product_from_csv(t *testing.T) {
 }
 
 func Test_insert_product_from_csv_with_channel(t *testing.T) {
-	db := utils.GetDBConnection()
+	db := utils2.GetDBConnection()
 
 	productRepo := product.ProductRepositoryImpl{
 		DB: db,
@@ -100,7 +100,7 @@ func Test_insert_product_from_csv_with_channel(t *testing.T) {
 	}
 
 	defer func(db *sql.DB) {
-		helpers.CommitOrRollback(begin)
+		helpers2.CommitOrRollback(begin)
 		err := db.Close()
 		if err != nil {
 			fmt.Println("close db error")
@@ -110,7 +110,7 @@ func Test_insert_product_from_csv_with_channel(t *testing.T) {
 	}(db)
 
 	go productRepo.SaveFromCSVWithChannel(&group, context.Background(), begin, productChanel)
-	utils.ProductsFromCSVWithChannel(abs, productChanel)
+	utils2.ProductsFromCSVWithChannel(abs, productChanel)
 	fmt.Println("done insert")
 	group.Wait()
 	fmt.Println("waitgroup done", time.Now())
